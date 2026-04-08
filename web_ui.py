@@ -119,13 +119,12 @@ def take_action(
 def build_ui() -> gr.Blocks:
     """Build the Gradio web interface."""
     with gr.Blocks(
-        title="DevOps Incident Response Environment",
-        theme=gr.themes.Soft(),
+        title="ITSM Intelligence Environment",
     ) as app:
         gr.Markdown(
-            "# DevOps Incident Response Environment\n"
-            "Investigate production incidents like a real SRE. "
-            "Query alerts, logs, metrics, and execute remediations."
+            "# ITSM Intelligence Environment\n"
+            "Investigate production incidents and triage IT service tickets like a real SRE. "
+            "Query alerts, logs, metrics, classify tickets, and execute remediations."
         )
 
         with gr.Row():
