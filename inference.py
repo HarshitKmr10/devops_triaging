@@ -31,11 +31,11 @@ from models import IncidentAction
 # Configuration
 # ---------------------------------------------------------------------------
 
-HF_TOKEN = os.environ.get("HF_TOKEN") or os.environ.get("API_KEY")
-if not HF_TOKEN:
-    raise EnvironmentError("HF_TOKEN environment variable is required")
-API_KEY = HF_TOKEN
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+# Validator injects API_KEY and API_BASE_URL — prioritize those
+API_KEY = os.environ.get("API_KEY") or os.environ.get("HF_TOKEN")
+if not API_KEY:
+    raise EnvironmentError("API_KEY or HF_TOKEN environment variable is required")
+API_BASE_URL = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen3.5-122B-A10B-FP8")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:8000")
 IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
