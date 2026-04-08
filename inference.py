@@ -42,6 +42,7 @@ MAX_STEPS_PER_TASK = {
     "alert_triage": 12,
     "root_cause_analysis": 18,
     "cascading_failure": 25,
+    "ticket_triage": 20,
 }
 
 SUCCESS_SCORE_THRESHOLD = 0.4
@@ -52,6 +53,7 @@ TASKS = [
     "alert_triage",
     "root_cause_analysis",
     "cascading_failure",
+    "ticket_triage",
 ]
 
 SYSTEM_PROMPT = textwrap.dedent("""

@@ -1,10 +1,22 @@
-# DevOps Incident Response Environment
+---
+title: ITSM Intelligence Environment
+emoji: "🔧"
+colorFrom: red
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+tags:
+  - openenv
+---
 
-An OpenEnv-compliant environment that simulates **real-world SRE incident response** scenarios. Agents investigate production incidents by querying alerts, logs, metrics, tracing service dependencies, and executing remediations — exactly as a human on-call engineer would.
+# ITSM Intelligence Environment - IT Service Management for LLM Agents
+
+An OpenEnv-compliant environment that simulates **real-world IT Service Management (ITSM)** scenarios spanning DevOps incident response, service desk ticket triage, and infrastructure diagnostics. Agents investigate production incidents, triage support tickets, trace cascading failures, and execute remediations — exactly as a human SRE or service desk analyst would.
 
 ## Motivation
 
-Every tech company faces production incidents. Effective incident response requires systematic investigation, pattern recognition across noisy data, and decisive action under pressure. This environment benchmarks how well LLM agents handle these real-world challenges across three difficulty tiers.
+Every organization runs on IT services. From production outages to VIP support escalations, effective ITSM requires systematic investigation, priority assessment under pressure, and decisive action. This environment benchmarks how well LLM agents handle the full ITSM spectrum across four tasks and three difficulty tiers.
 
 ## Tasks
 
@@ -12,6 +24,7 @@ Every tech company faces production incidents. Effective incident response requi
 |---------|------|------------|-------------|-----------|
 | `alert_triage` | Alert Triage | Easy | Classify severity, identify primary service, and escalate to the right team from 8 active alerts | 20 |
 | `root_cause_analysis` | Root Cause Analysis | Medium | Diagnose a DB connection pool exhaustion caused by a missing index from a new deployment | 25 |
+| `ticket_triage` | IT Service Ticket Triage | Medium | Process 6 support tickets, classify priority/category, identify VIP escalation, route to resolver groups | 25 |
 | `cascading_failure` | Cascading Failure | Hard | Trace a 5-service cascading failure back to an auth-service config deployment that changed JWT key format | 30 |
 
 ### Task Details
@@ -21,6 +34,9 @@ A deployment to `payment-service` introduced a bug causing transaction failures.
 
 #### Root Cause Analysis (Medium)
 Deployment v2.5.1 to `order-service` added an inventory reconciliation query without an index on `inventory.sku` (2.3M rows). This causes sequential scans that exhaust the DB connection pool, leading to cascading timeouts. The agent must trace through logs and metrics to find the slow query, missing index, and execute remediation.
+
+#### IT Service Ticket Triage (Medium)
+A batch of 6 support tickets arrives simultaneously at the service desk. The agent must read each ticket, classify by category (access, hardware, network, software, change_request), assign priority (P1-P4), and route to the correct resolver group. One ticket is a VIP CEO escalation with a 90-minute SLA — the agent must identify it among routine requests and handle it first.
 
 #### Cascading Failure (Hard)
 A config deployment to `auth-service` changed the JWT key_id format from `rsa-prod-2024` to `rsa_prod_2024`. This causes 95% token rejection, cascading through: `auth-service` -> `api-gateway` -> `user-service` -> `order-service` -> `payment-service`. The agent must trace backwards through the chain and rollback the config.
