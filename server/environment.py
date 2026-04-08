@@ -129,8 +129,18 @@ class IncidentResponseEnvironment(
         elif self._done:
             status = "UNRESOLVED - Episode ended without full resolution."
 
+        # Include score breakdown in output when episode ends
+        output = result.output
+        if self._done:
+            breakdown = self._scenario.get_score_breakdown()
+            output = (output or "") + "\n\n" + breakdown.format()
+            if self._scenario.safety_violations:
+                output += "\n\nSafety Violations:\n"
+                for v in self._scenario.safety_violations:
+                    output += f"  - {v}\n"
+
         return IncidentObservation(
-            output=result.output,
+            output=output,
             system_status=status,
             active_alerts_count=len(config.services),
             feedback=result.feedback,
@@ -147,6 +157,15 @@ class IncidentResponseEnvironment(
                 "task_id": self._task_id,
                 "total_reward": total_reward,
                 "rewards_so_far": list(self._rewards),
+                "score_breakdown": {
+                    "investigation": breakdown.investigation,
+                    "diagnosis": breakdown.diagnosis,
+                    "resolution": breakdown.resolution,
+                    "safety": breakdown.safety,
+                    "efficiency": breakdown.efficiency,
+                    "weighted_total": breakdown.total,
+                } if self._done else None,
+                "safety_violations": self._scenario.safety_violations if self._done else [],
             },
         )
 

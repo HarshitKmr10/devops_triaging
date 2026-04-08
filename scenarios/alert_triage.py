@@ -58,6 +58,7 @@ class AlertTriageScenario(BaseScenario):
             max_steps=20,
             services=_SCENARIO_SERVICES,
             system_status="DEGRADED - Multiple alerts firing. Payment flows impacted.",
+            noise_services=("monitoring",),
         )
 
     def handle_action(
@@ -77,10 +78,21 @@ class AlertTriageScenario(BaseScenario):
         output = ""
         feedback = ""
 
+        # Danger zone check
+        danger = self._check_danger_zone(action_type, command=command, remediation=remediation)
+        if danger:
+            feedback = f"DANGER: {danger}. Safety score reduced."
+            reward = -0.05
+            reward = self._clamp_reward(reward)
+            self._record_step(action_type, reward, service_name)
+            return ActionResult(output="", reward=reward, feedback=feedback)
+
         if action_type == "view_alerts":
             output = format_alerts(ALERT_TRIAGE_ALERTS)
             if self._achieve_milestone("viewed_alerts"):
                 reward = 0.05
+                self._investigation_score += 0.2
+                self._mark_investigated()
                 feedback = "Good - reviewing active alerts is the right first step."
             else:
                 feedback = "You already reviewed the alerts."
@@ -91,8 +103,12 @@ class AlertTriageScenario(BaseScenario):
                 if keyword:
                     logs = tuple(e for e in logs if keyword.lower() in e.message.lower())
                 output = format_logs(logs) if logs else "No log entries matching your query."
-                if service_name in _RELEVANT_SERVICES and self._achieve_milestone(f"logs_{service_name}"):
+                is_relevant = service_name in _RELEVANT_SERVICES
+                self._track_investigation(service_name, is_relevant)
+                if is_relevant and self._achieve_milestone(f"logs_{service_name}"):
                     reward = 0.03
+                    self._investigation_score += 0.15
+                    self._mark_investigated()
                     feedback = f"Investigating {service_name} logs - good diagnostic step."
                 else:
                     feedback = f"Logs retrieved for {service_name}."
@@ -107,8 +123,11 @@ class AlertTriageScenario(BaseScenario):
                     output = format_metric(ALERT_TRIAGE_METRICS[service_name][metric_type])
                 else:
                     output = format_metrics(ALERT_TRIAGE_METRICS[service_name])
-                if service_name in _RELEVANT_SERVICES and self._achieve_milestone(f"metrics_{service_name}"):
+                is_relevant = service_name in _RELEVANT_SERVICES
+                self._track_investigation(service_name, is_relevant)
+                if is_relevant and self._achieve_milestone(f"metrics_{service_name}"):
                     reward = 0.03
+                    self._investigation_score += 0.15
                     feedback = f"Metrics for {service_name} retrieved."
                 else:
                     feedback = f"Metrics for {service_name} retrieved."
@@ -140,6 +159,7 @@ class AlertTriageScenario(BaseScenario):
                 if sev_upper == _CORRECT_SEVERITY:
                     if self._achieve_milestone("correct_severity"):
                         reward = 0.20
+                        self._diagnosis_score += 0.4
                         feedback = "Correct! This is a P1 incident - customer-facing, revenue impact."
                     else:
                         feedback = "Severity already classified correctly."
@@ -161,10 +181,12 @@ class AlertTriageScenario(BaseScenario):
                 if svc_lower == _CORRECT_PRIMARY_SERVICE:
                     if self._achieve_milestone("identified_service"):
                         reward = 0.25
+                        self._diagnosis_score += 0.3
                         feedback = "Correct! payment-service is the primary affected service."
                     if any(kw in cause_lower for kw in ("deploy", "v3.2.1", "bug", "card_token", "migration")):
                         if self._achieve_milestone("identified_cause"):
                             reward += 0.15
+                            self._diagnosis_score += 0.3
                             feedback += " Root cause (deployment bug) correctly identified."
                     else:
                         feedback += " Try to be more specific about what caused the failure."
@@ -181,6 +203,7 @@ class AlertTriageScenario(BaseScenario):
                 if team_lower == _CORRECT_TEAM:
                     if self._achieve_milestone("correct_escalation"):
                         reward = 0.20
+                        self._resolution_score += 1.0
                         feedback = "Correct! Escalated to payments-team who owns payment-service."
                         self._done = True
                     else:

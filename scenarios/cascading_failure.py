@@ -68,6 +68,7 @@ class CascadingFailureScenario(BaseScenario):
             max_steps=30,
             services=_ALL_SERVICES,
             system_status="MAJOR OUTAGE - Multiple services failing. Revenue impact: ~$120K/hour.",
+            noise_services=("notification-service",),
         )
 
     def handle_action(
@@ -87,10 +88,21 @@ class CascadingFailureScenario(BaseScenario):
         output = ""
         feedback = ""
 
+        # Danger zone check
+        danger = self._check_danger_zone(action_type, command=command, remediation=remediation)
+        if danger:
+            feedback = f"DANGER: {danger}. Safety score reduced."
+            reward = -0.05
+            reward = self._clamp_reward(reward)
+            self._record_step(action_type, reward, service_name)
+            return ActionResult(output="", reward=reward, feedback=feedback)
+
         if action_type == "view_alerts":
             output = format_alerts(CASCADE_ALERTS)
             if self._achieve_milestone("viewed_alerts"):
                 reward = 0.03
+                self._investigation_score += 0.1
+                self._mark_investigated()
                 feedback = (
                     "Multiple services affected. Notice the timestamps - which alerts came first? "
                     "The auth-service config update was earliest at 14:00:15Z."
@@ -109,8 +121,12 @@ class CascadingFailureScenario(BaseScenario):
                 if service_name in _CASCADE_CHAIN and service_name not in self._cascade_traced:
                     self._cascade_traced.append(service_name)
 
+                self._track_investigation(service_name, service_name in _CASCADE_CHAIN)
+
                 if service_name == "auth-service" and self._achieve_milestone("logs_auth_service"):
                     reward = 0.10
+                    self._investigation_score += 0.3
+                    self._mark_investigated()
                     feedback = (
                         "CRITICAL FINDING: auth-service logs show config deployment jwt-validation-v3 "
                         "changed key_id format. 95% of tokens being rejected!"
@@ -233,6 +249,7 @@ class CascadingFailureScenario(BaseScenario):
                 if identified_auth and identified_config and matches >= 3:
                     if self._achieve_milestone("correct_root_cause"):
                         reward = 0.20
+                        self._diagnosis_score += 1.0
                         feedback = (
                             "Excellent! Root cause correctly identified: auth-service config "
                             "deployment jwt-validation-v3 changed key_id format, causing 95% "
@@ -263,6 +280,7 @@ class CascadingFailureScenario(BaseScenario):
 
                 if matches >= 1 and targets_auth:
                     if self._achieve_milestone("correct_remediation"):
+                        self._resolution_score += 1.0
                         # Bonus for tracing the full cascade
                         chain_bonus = 0.0
                         traced_count = len(set(self._cascade_traced) & set(_CASCADE_CHAIN))

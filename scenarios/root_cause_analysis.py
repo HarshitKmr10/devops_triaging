@@ -62,6 +62,7 @@ class RootCauseAnalysisScenario(BaseScenario):
             max_steps=25,
             services=_SCENARIO_SERVICES,
             system_status="DEGRADED - order-service latency critical. API timeouts increasing.",
+            noise_services=(),
         )
 
     def handle_action(
@@ -81,10 +82,21 @@ class RootCauseAnalysisScenario(BaseScenario):
         output = ""
         feedback = ""
 
+        # Danger zone check
+        danger = self._check_danger_zone(action_type, command=command, remediation=remediation)
+        if danger:
+            feedback = f"DANGER: {danger}. Safety score reduced."
+            reward = -0.05
+            reward = self._clamp_reward(reward)
+            self._record_step(action_type, reward, service_name)
+            return ActionResult(output="", reward=reward, feedback=feedback)
+
         if action_type == "view_alerts":
             output = format_alerts(RCA_ALERTS)
             if self._achieve_milestone("viewed_alerts"):
                 reward = 0.05
+                self._investigation_score += 0.15
+                self._mark_investigated()
                 feedback = "Alerts reviewed. Note the order-service latency and error alerts."
             else:
                 feedback = "Alerts already reviewed."
@@ -98,12 +110,16 @@ class RootCauseAnalysisScenario(BaseScenario):
 
                 if service_name == "order-service" and self._achieve_milestone("logs_order_service"):
                     reward = 0.08
+                    self._investigation_score += 0.25
+                    self._mark_investigated()
                     feedback = (
                         "Key finding: order-service logs show deployment v2.5.1 followed by "
                         "slow queries and connection pool exhaustion."
                     )
                 elif service_name == "inventory-db" and self._achieve_milestone("logs_inventory_db"):
                     reward = 0.08
+                    self._investigation_score += 0.25
+                    self._mark_investigated()
                     feedback = (
                         "Key finding: inventory-db shows sequential scan on 2.3M rows - "
                         "missing index on 'sku' column."
@@ -210,6 +226,7 @@ class RootCauseAnalysisScenario(BaseScenario):
                 )):
                     if self._achieve_milestone("correct_root_cause"):
                         reward = 0.25
+                        self._diagnosis_score += 1.0
                         feedback = (
                             "Excellent root cause analysis! The deployment v2.5.1 added an inventory "
                             "reconciliation query with a missing index on inventory.sku, causing "
@@ -236,6 +253,7 @@ class RootCauseAnalysisScenario(BaseScenario):
                 if matches >= 2:
                     if self._achieve_milestone("correct_remediation"):
                         reward = 0.20
+                        self._resolution_score += 1.0
                         feedback = (
                             "Excellent remediation! Killing long-running queries and adding an index "
                             "on inventory.sku will resolve the connection pool exhaustion."
