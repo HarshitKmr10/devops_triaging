@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openenv-devops_incident_response"
+version = "0.1.0"
+description = "DevOps Incident Response environment for OpenEnv - simulates real-world SRE scenarios"
+license = "BSD-3-Clause"
+requires-python = ">=3.10"
+dependencies = [
+    "openenv-core[core]>=0.2.2",
+    "openai>=1.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "pytest-asyncio",
+    "httpx",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.package-dir]
+devops_incident_env = "."
+"devops_incident_env.server" = "server"
+"devops_incident_env.scenarios" = "scenarios"
+"devops_incident_env.data" = "data"
+
+[project.entry-points.console_scripts]
+server = "server.app:main"
