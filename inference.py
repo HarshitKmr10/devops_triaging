@@ -31,14 +31,12 @@ from models import IncidentAction
 # Configuration
 # ---------------------------------------------------------------------------
 
-# Validator injects API_KEY and API_BASE_URL — prioritize those
-API_KEY = os.environ.get("API_KEY") or os.environ.get("HF_TOKEN")
-if not API_KEY:
-    raise EnvironmentError("API_KEY or HF_TOKEN environment variable is required")
+# Validator injects API_KEY and API_BASE_URL — use exactly those
 API_BASE_URL = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen3.5-122B-A10B-FP8")
-ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:8000")
-IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
+API_KEY = os.environ.get("API_KEY") or os.environ.get("HF_TOKEN", "")
+MODEL_NAME = os.environ.get("MODEL_NAME", "Qwen/Qwen3.5-122B-A10B-FP8")
+ENV_BASE_URL = os.environ.get("ENV_BASE_URL", "http://localhost:8000")
+IMAGE_NAME = os.environ.get("LOCAL_IMAGE_NAME")
 BENCHMARK = "devops_incident_response"
 
 MAX_STEPS_PER_TASK = {
