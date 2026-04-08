@@ -31,5 +31,5 @@ devops_incident_env = "."
 "devops_incident_env.scenarios" = "scenarios"
 "devops_incident_env.data" = "data"
 
-[project.entry-points.console_scripts]
+[project.scripts]
 server = "server.app:main"
