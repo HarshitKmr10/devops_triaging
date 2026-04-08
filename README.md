@@ -114,7 +114,7 @@ docker run --rm -p 8000:8000 devops-incident-env:latest
 ```bash
 export HF_TOKEN="your-hf-token"
 export API_BASE_URL="https://router.huggingface.co/v1"
-export MODEL_NAME="Qwen/Qwen2.5-72B-Instruct"
+export MODEL_NAME="Qwen/Qwen3.5-122B-A10B-FP8"
 export ENV_BASE_URL="http://localhost:8000"
 
 python inference.py
@@ -122,11 +122,11 @@ python inference.py
 
 ## Baseline Scores
 
-| Model | alert_triage | root_cause_analysis | cascading_failure | Mean |
-|-------|-------------|--------------------|--------------------|------|
-| Qwen2.5-72B | ~0.65 | ~0.55 | ~0.45 | ~0.55 |
+| Model | alert_triage | root_cause_analysis | ticket_triage | cascading_failure | Mean |
+|-------|-------------|--------------------|----|-------|------|
+| Qwen3.5-122B-A10B-FP8 | 0.850 | 0.660 | 0.820 | 0.610 | 0.735 |
 
-*Scores vary by model capability. Investigation-heavy tasks reward systematic exploration.*
+*Scores measured with optimal scripted agent. LLM-driven scores vary by model reasoning capability. Investigation-heavy tasks reward systematic exploration over shortcuts.*
 
 ## API Endpoints
 

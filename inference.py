@@ -6,7 +6,7 @@ Runs an LLM agent through all 3 incident response tasks and emits structured log
 
 Required environment variables:
     API_BASE_URL      LLM API endpoint (default: https://router.huggingface.co/v1)
-    MODEL_NAME        Model identifier (default: Qwen/Qwen2.5-72B-Instruct)
+    MODEL_NAME        Model identifier (default: Qwen/Qwen3.5-122B-A10B-FP8)
     HF_TOKEN          HuggingFace / API key (required)
     ENV_BASE_URL      Environment server URL (default: http://localhost:8000)
 
