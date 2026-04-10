@@ -179,11 +179,9 @@ Tested against `https://harshitkmr10-devops-triaging.hf.space`:
 
 ---
 
-## Extended Capabilities (Beyond Core Submission)
+## RL Training & Production Pipeline
 
-> Everything below is **additive** — it lives in separate directories and does NOT affect the core 4 tasks, `inference.py`, or the hackathon submission. Running `python inference.py` still runs only the original 4 tasks.
-
-### Why This Matters for RL
+### Why This Matters
 
 The core environment is an **evaluation benchmark**. But the real value of OpenEnv is enabling **RL training loops** where agents learn from experience:
 
