@@ -1,11 +1,3 @@
-"""
-Interactive Web UI for DevOps Incident Response Environment.
-
-Provides a Gradio-based interface for manually interacting with
-the incident response scenarios, viewing alerts/logs/metrics,
-and seeing reward feedback in real-time.
-"""
-
 import gradio as gr
 
 from models import IncidentAction, VALID_ACTION_TYPES

@@ -1,21 +1,4 @@
 #!/usr/bin/env python3
-"""
-inference.py - DevOps Incident Response OpenEnv Agent
-=====================================================
-Runs an LLM agent through all 3 incident response tasks and emits structured logs.
-
-Required environment variables:
-    API_BASE_URL      LLM API endpoint (default: https://router.huggingface.co/v1)
-    MODEL_NAME        Model identifier (default: Qwen/Qwen3.5-122B-A10B-FP8)
-    HF_TOKEN          HuggingFace / API key (required)
-    ENV_BASE_URL      Environment server URL (default: http://localhost:8000)
-
-Stdout format:
-    [START] task=<task> env=<benchmark> model=<model>
-    [STEP]  step=<n> action=<action_json> reward=<0.00> done=<true|false> error=<msg|null>
-    [END]   success=<true|false> steps=<n> score=<0.000> rewards=<r1,r2,...>
-"""
-
 import json
 import os
 import re
@@ -27,11 +10,7 @@ from openai import OpenAI
 from client import IncidentResponseClient
 from models import IncidentAction
 
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-
-# Validator injects API_KEY and API_BASE_URL
+# Config
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen3.5-122B-A10B-FP8")
@@ -93,9 +72,7 @@ SYSTEM_PROMPT = textwrap.dedent("""
 """).strip()
 
 
-# ---------------------------------------------------------------------------
 # Logging helpers
-# ---------------------------------------------------------------------------
 
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
@@ -118,9 +95,7 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
     )
 
 
-# ---------------------------------------------------------------------------
-# LLM action extraction
-# ---------------------------------------------------------------------------
+# LLM
 
 def parse_action_json(text: str) -> dict:
     """Extract a JSON action object from LLM output, handling think tags and markdown."""
@@ -178,16 +153,13 @@ def get_model_action(
         return parse_action_json(raw)
 
     except Exception as exc:
-        print(f"[DEBUG] Model request failed: {exc}", flush=True)
+        print(f"Model request failed: {exc}", flush=True)
         return {"action_type": "view_alerts"}
 
 
-# ---------------------------------------------------------------------------
-# Single task runner
-# ---------------------------------------------------------------------------
+# Task runner
 
 def run_task(llm_client: OpenAI, task_name: str) -> None:
-    """Run one full episode, emitting [START]/[STEP]/[END] logs."""
     if IMAGE_NAME:
         env_instance = IncidentResponseClient.from_docker_image(IMAGE_NAME, task=task_name)
     else:
@@ -245,16 +217,14 @@ def run_task(llm_client: OpenAI, task_name: str) -> None:
         success = score >= SUCCESS_SCORE_THRESHOLD
 
     except Exception as exc:
-        print(f"[DEBUG] Task {task_name} error: {exc}", flush=True)
+        print(f"Task {task_name} error: {exc}", flush=True)
         last_error = str(exc)
 
     finally:
         log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 
 
-# ---------------------------------------------------------------------------
 # Main
-# ---------------------------------------------------------------------------
 
 def main() -> None:
     llm_client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)

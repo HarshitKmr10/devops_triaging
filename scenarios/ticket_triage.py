@@ -1,19 +1,3 @@
-"""
-Task 4: IT Service Ticket Triage (Medium)
-
-The agent acts as an ITSM service desk analyst processing incoming support tickets.
-Must:
-1. Review the ticket queue
-2. Classify each ticket by category (hardware, software, network, access, change_request)
-3. Assign priority (P1-P4) based on business impact
-4. Route to the correct resolver group
-5. Handle an urgent VIP escalation mid-triage
-
-Scenario: A batch of 6 tickets arrive simultaneously. One is a VIP CEO escalation
-hiding among routine requests. The agent must identify it, reprioritize, and handle
-the SLA-critical items first.
-"""
-
 from typing import Optional
 
 from .base import ActionResult, BaseScenario, ScenarioConfig
@@ -183,7 +167,6 @@ def _format_resolver_groups() -> str:
 
 
 class TicketTriageScenario(BaseScenario):
-    """Medium scenario: ITSM ticket triage with VIP escalation."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -212,7 +195,7 @@ class TicketTriageScenario(BaseScenario):
             noise_services=(),
         )
 
-    def handle_action(
+    def _handle_action_impl(
         self,
         action_type: str,
         service_name: Optional[str] = None,
@@ -228,15 +211,6 @@ class TicketTriageScenario(BaseScenario):
         reward = 0.0
         output = ""
         feedback = ""
-
-        # Danger zone
-        danger = self._check_danger_zone(action_type, command=command, remediation=remediation)
-        if danger:
-            feedback = f"DANGER: {danger}. Safety score reduced."
-            reward = -0.05
-            reward = self._clamp_reward(reward)
-            self._record_step(action_type, reward, service_name)
-            return ActionResult(output="", reward=reward, feedback=feedback)
 
         if action_type == "view_alerts":
             output = _format_ticket_queue()

@@ -1,19 +1,5 @@
-"""
-Ticket system integrations for ServiceNow, Jira, and Linear.
-
-Provides a unified interface for:
-- Creating/updating incidents from agent findings
-- Fetching existing tickets for triage scenarios
-- Saving agent trajectories as ticket comments
-- Closing the feedback loop (resolved tickets -> training data)
-
-Requires environment variables:
-- SERVICENOW_INSTANCE, SERVICENOW_USER, SERVICENOW_PASSWORD
-- JIRA_URL, JIRA_EMAIL, JIRA_API_TOKEN
-- LINEAR_API_KEY
-"""
-
 import json
+import logging
 import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -21,6 +7,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import requests
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -53,9 +41,7 @@ class TicketSystemConnector(ABC):
         priority: str,
         team: Optional[str] = None,
         labels: Optional[List[str]] = None,
-    ) -> TicketData:
-        """Create a new incident ticket."""
-        ...
+    ) -> TicketData: ...
 
     @abstractmethod
     def update_ticket(
@@ -64,9 +50,7 @@ class TicketSystemConnector(ABC):
         comment: Optional[str] = None,
         status: Optional[str] = None,
         priority: Optional[str] = None,
-    ) -> bool:
-        """Update an existing ticket."""
-        ...
+    ) -> bool: ...
 
     @abstractmethod
     def fetch_open_tickets(
@@ -74,9 +58,7 @@ class TicketSystemConnector(ABC):
         team: Optional[str] = None,
         priority: Optional[str] = None,
         limit: int = 50,
-    ) -> List[TicketData]:
-        """Fetch open tickets for triage."""
-        ...
+    ) -> List[TicketData]: ...
 
     @abstractmethod
     def add_agent_findings(
@@ -86,9 +68,7 @@ class TicketSystemConnector(ABC):
         remediation: str,
         score_breakdown: Dict[str, float],
         trajectory_summary: str,
-    ) -> bool:
-        """Add agent investigation findings as a ticket comment."""
-        ...
+    ) -> bool: ...
 
 
 class ServiceNowConnector(TicketSystemConnector):
@@ -147,7 +127,7 @@ class ServiceNowConnector(TicketSystemConnector):
                 raw_data=result,
             )
         except Exception as e:
-            print(f"[ServiceNow] Create incident error: {e}")
+            log.error("ServiceNow create incident error: %s", e)
             return TicketData(
                 ticket_id="ERROR", title=title, description=str(e),
                 status="error", priority=priority, source_system="servicenow",
@@ -178,7 +158,7 @@ class ServiceNowConnector(TicketSystemConnector):
                 self._request("PATCH", f"/table/incident/{sys_id}", data)
                 return True
         except Exception as e:
-            print(f"[ServiceNow] Update error: {e}")
+            log.error("ServiceNow update error: %s", e)
         return False
 
     def fetch_open_tickets(
@@ -216,7 +196,7 @@ class ServiceNowConnector(TicketSystemConnector):
                 ))
             return tickets
         except Exception as e:
-            print(f"[ServiceNow] Fetch error: {e}")
+            log.error("ServiceNow fetch error: %s", e)
             return []
 
     def add_agent_findings(
@@ -301,7 +281,7 @@ class JiraConnector(TicketSystemConnector):
                 raw_data=result,
             )
         except Exception as e:
-            print(f"[Jira] Create error: {e}")
+            log.error("Jira create error: %s", e)
             return TicketData(
                 ticket_id="ERROR", title=title, description=str(e),
                 status="error", priority=priority, source_system="jira",
@@ -329,7 +309,7 @@ class JiraConnector(TicketSystemConnector):
                 })
             return True
         except Exception as e:
-            print(f"[Jira] Update error: {e}")
+            log.error("Jira update error: %s", e)
             return False
 
     def fetch_open_tickets(
@@ -363,7 +343,7 @@ class JiraConnector(TicketSystemConnector):
                 ))
             return tickets
         except Exception as e:
-            print(f"[Jira] Fetch error: {e}")
+            log.error("Jira fetch error: %s", e)
             return []
 
     def add_agent_findings(
@@ -446,7 +426,7 @@ class LinearConnector(TicketSystemConnector):
                 source_system="linear",
             )
         except Exception as e:
-            print(f"[Linear] Create error: {e}")
+            log.error("Linear create error: %s", e)
             return TicketData(
                 ticket_id="ERROR", title=title, description=str(e),
                 status="error", priority=priority, source_system="linear",
@@ -485,7 +465,7 @@ class LinearConnector(TicketSystemConnector):
                     self._graphql(mutation, {"issueId": issue_id, "body": comment})
             return True
         except Exception as e:
-            print(f"[Linear] Update error: {e}")
+            log.error("Linear update error: %s", e)
             return False
 
     def fetch_open_tickets(
@@ -519,7 +499,7 @@ class LinearConnector(TicketSystemConnector):
                 ))
             return tickets
         except Exception as e:
-            print(f"[Linear] Fetch error: {e}")
+            log.error("Linear fetch error: %s", e)
             return []
 
     def add_agent_findings(

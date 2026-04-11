@@ -1,16 +1,4 @@
-"""
-ELK (Elasticsearch/Loki) connector for live log search.
-
-Fetches real logs from Elasticsearch or Grafana Loki and converts
-them to our LogEntry model for use in live incident scenarios.
-
-Supports:
-- Elasticsearch (default)
-- Grafana Loki (via loki_url parameter)
-
-Requires: ELASTICSEARCH_URL or LOKI_URL environment variable
-"""
-
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
@@ -18,6 +6,8 @@ from typing import Dict, List, Optional
 import requests
 
 from data.service_topology import LogEntry
+
+log = logging.getLogger(__name__)
 
 
 class ELKConnector:
@@ -90,7 +80,7 @@ class ELKConnector:
             resp.raise_for_status()
             data = resp.json()
         except Exception as e:
-            print(f"[ELK] Elasticsearch error: {e}")
+            log.error("Elasticsearch error: %s", e)
             return []
 
         entries: List[LogEntry] = []
@@ -147,7 +137,7 @@ class ELKConnector:
             resp.raise_for_status()
             data = resp.json()
         except Exception as e:
-            print(f"[ELK] Loki error: {e}")
+            log.error("Loki error: %s", e)
             return []
 
         entries: List[LogEntry] = []

@@ -1,10 +1,3 @@
-"""
-Composable failure type definitions for procedural scenario generation.
-
-Each FailureType knows how to generate realistic alerts, logs, metrics,
-and ground truth for a specific class of production incident.
-"""
-
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 import random
@@ -49,7 +42,6 @@ class FailureType:
         rng: random.Random,
         timestamp_base: str = "2024-03-15T14:",
     ) -> Tuple[Alert, ...]:
-        """Generate realistic alerts for this failure type."""
         alerts: list[Alert] = []
         minute = 20
 
@@ -102,7 +94,6 @@ class FailureType:
         rng: random.Random,
         timestamp_base: str = "2024-03-15T14:",
     ) -> Dict[str, Tuple[LogEntry, ...]]:
-        """Generate realistic log entries for this failure type."""
         logs: Dict[str, list[LogEntry]] = {}
         minute = 18
 
@@ -162,7 +153,6 @@ class FailureType:
         affected_services: Tuple[str, ...],
         rng: random.Random,
     ) -> Dict[str, Dict[str, MetricSnapshot]]:
-        """Generate metric snapshots showing the failure impact."""
         metrics: Dict[str, Dict[str, MetricSnapshot]] = {}
 
         svc_def = SERVICES.get(primary_service)
@@ -225,7 +215,6 @@ class FailureType:
     def get_ground_truth(
         self, primary_service: str, cascade_chain: Tuple[str, ...] = ()
     ) -> GroundTruth:
-        """Generate the ground truth for grading."""
         svc_def = SERVICES.get(primary_service)
         team = svc_def.team if svc_def else "platform-team"
         return GroundTruth(
@@ -239,7 +228,6 @@ class FailureType:
         )
 
 
-# ─── Failure Type Registry ───────────────────────────────────────────────
 
 DEPLOYMENT_BUG = FailureType(
     name="deployment_bug",

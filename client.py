@@ -1,5 +1,3 @@
-"""DevOps Incident Response Environment Client."""
-
 from typing import Any, Dict
 
 from openenv.core import EnvClient
@@ -14,19 +12,11 @@ except ImportError:
 class IncidentResponseClient(
     EnvClient[IncidentAction, IncidentObservation, IncidentState]
 ):
-    """
-    Client for the DevOps Incident Response Environment.
-
-    Maintains a persistent WebSocket connection to the environment server
-    for efficient multi-step incident response interactions.
-    """
 
     def _step_payload(self, action: IncidentAction) -> Dict[str, Any]:
-        """Convert IncidentAction to JSON payload for step message."""
         return action.model_dump(exclude_none=True)
 
     def _parse_result(self, payload: Dict[str, Any]) -> StepResult[IncidentObservation]:
-        """Parse server response into StepResult[IncidentObservation]."""
         obs_data = payload.get("observation", {})
 
         observation = IncidentObservation(
@@ -53,7 +43,6 @@ class IncidentResponseClient(
         )
 
     def _parse_state(self, payload: Dict[str, Any]) -> IncidentState:
-        """Parse server response into IncidentState."""
         return IncidentState(
             task_id=payload.get("task_id", ""),
             task_name=payload.get("task_name", ""),

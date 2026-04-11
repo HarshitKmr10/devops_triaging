@@ -1,13 +1,4 @@
-"""
-Datadog connector for live metrics and monitors.
-
-Fetches real-time metrics and monitor alerts from Datadog API
-and converts them to our MetricSnapshot/Alert models.
-
-Requires: DATADOG_API_KEY and DATADOG_APP_KEY environment variables
-Docs: https://docs.datadoghq.com/api/latest/
-"""
-
+import logging
 import os
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
@@ -15,6 +6,8 @@ from typing import Dict, List, Optional
 import requests
 
 from data.service_topology import Alert, MetricSnapshot
+
+log = logging.getLogger(__name__)
 
 
 class DatadogConnector:
@@ -107,7 +100,7 @@ class DatadogConnector:
             )
 
         except Exception as e:
-            print(f"[Datadog] Error querying metric: {e}")
+            log.error("Error querying metric: %s", e)
             return None
 
     def query_all_metrics(
@@ -135,7 +128,7 @@ class DatadogConnector:
                 "monitor_tags": f"service:{service}" if service else "",
             })
         except Exception as e:
-            print(f"[Datadog] Error fetching monitors: {e}")
+            log.error("Error fetching monitors: %s", e)
             return []
 
         severity_map = {
@@ -177,5 +170,5 @@ class DatadogConnector:
             resp = requests.post(url, headers=self._headers, timeout=10)
             return resp.status_code == 200
         except Exception as e:
-            print(f"[Datadog] Error muting monitor {alert_id}: {e}")
+            log.error("Error muting monitor %s: %s", alert_id, e)
             return False

@@ -1,11 +1,3 @@
-"""
-Agent-in-the-loop: autonomous investigation with human approval for remediation.
-
-The agent investigates incidents autonomously but must get human approval
-before executing any remediation action. Includes confidence scoring
-and risk assessment.
-"""
-
 import json
 import time
 from dataclasses import dataclass, field
@@ -60,11 +52,6 @@ def assess_risk(
     remediation: str,
     service_name: str,
 ) -> Tuple[str, bool]:
-    """Assess the risk level and reversibility of a remediation.
-
-    Returns:
-        (risk_level, is_reversible)
-    """
     rem_lower = remediation.lower()
 
     # High-risk patterns
@@ -89,15 +76,6 @@ def compute_confidence(
     investigation: InvestigationState,
     root_cause_specificity: int,
 ) -> float:
-    """Compute confidence score based on investigation thoroughness.
-
-    Args:
-        investigation: Current investigation state
-        root_cause_specificity: Number of specific keywords in root cause (0-5)
-
-    Returns:
-        Confidence score 0.0 - 1.0
-    """
     score = 0.0
 
     # Investigation breadth
@@ -116,32 +94,6 @@ def compute_confidence(
 
 
 class AgentLoop:
-    """
-    Manages the agent-in-the-loop investigation and approval workflow.
-
-    The agent autonomously executes investigation actions but pauses
-    before any remediation or escalation to get human approval.
-
-    Usage:
-        loop = AgentLoop(scenario, llm_fn)
-
-        # Auto-investigate (no approval needed)
-        while not loop.investigation_complete:
-            loop.auto_step()
-
-        # Propose remediation (needs approval)
-        proposal = loop.propose_remediation(
-            service_name="auth-service",
-            remediation="Rollback config to v2",
-            rationale="Config change caused JWT validation failure",
-        )
-
-        # Human approves/rejects
-        loop.review_proposal(proposal.proposal_id, ApprovalStatus.APPROVED)
-
-        # Execute approved remediation
-        result = loop.execute_approved(proposal.proposal_id)
-    """
 
     def __init__(
         self,
@@ -190,10 +142,6 @@ class AgentLoop:
         )
 
     def auto_step(self, observation: str = "", feedback: str = "") -> Dict[str, Any]:
-        """Execute one autonomous investigation step (safe actions only).
-
-        Returns the action result dict.
-        """
         if self._llm_fn is None:
             return self._default_investigation_step()
 

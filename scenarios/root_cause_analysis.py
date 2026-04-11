@@ -1,16 +1,3 @@
-"""
-Task 2: Root Cause Analysis (Medium)
-
-The agent investigates a service degradation and must:
-1. Trace the symptom chain through logs and metrics
-2. Identify the root cause (DB connection pool exhaustion from slow query)
-3. Execute appropriate remediation (kill queries + add index)
-
-Scenario: A new deployment to order-service added an inventory reconciliation
-query without proper indexing, causing connection pool exhaustion on the database
-and cascading timeouts.
-"""
-
 from typing import Optional
 
 from data.service_topology import (
@@ -43,7 +30,6 @@ _SCENARIO_SERVICES = ("order-service", "api-gateway", "inventory-db")
 
 
 class RootCauseAnalysisScenario(BaseScenario):
-    """Medium scenario: diagnose root cause of DB connection pool exhaustion."""
 
     @property
     def config(self) -> ScenarioConfig:
@@ -65,7 +51,7 @@ class RootCauseAnalysisScenario(BaseScenario):
             noise_services=(),
         )
 
-    def handle_action(
+    def _handle_action_impl(
         self,
         action_type: str,
         service_name: Optional[str] = None,
@@ -81,15 +67,6 @@ class RootCauseAnalysisScenario(BaseScenario):
         reward = 0.0
         output = ""
         feedback = ""
-
-        # Danger zone check
-        danger = self._check_danger_zone(action_type, command=command, remediation=remediation)
-        if danger:
-            feedback = f"DANGER: {danger}. Safety score reduced."
-            reward = -0.05
-            reward = self._clamp_reward(reward)
-            self._record_step(action_type, reward, service_name)
-            return ActionResult(output="", reward=reward, feedback=feedback)
 
         if action_type == "view_alerts":
             output = format_alerts(RCA_ALERTS)

@@ -1,25 +1,5 @@
-"""
-GRPO (Group Relative Policy Optimization) training for incident response.
-
-Generates G rollouts per scenario, ranks them by reward, and trains the
-model to prefer high-reward trajectories over low-reward ones.
-
-Integrates with:
-- Our OpenEnv environment (generator + grading)
-- HuggingFace TRL for GRPO optimization
-- Trajectory collector for data logging
-- Curriculum scheduler for progressive difficulty
-
-Usage:
-    python -m training.grpo_trainer \
-        --model Qwen/Qwen2.5-7B-Instruct \
-        --num_scenarios 100 \
-        --rollouts_per_scenario 4 \
-        --epochs 3 \
-        --output_dir ./checkpoints
-"""
-
 import json
+import logging
 import os
 import time
 from dataclasses import dataclass, field
@@ -28,6 +8,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from generator.scenario_generator import ScenarioGenerator, GeneratedScenario
 from collector.trajectory_collector import TrajectoryCollector, Trajectory
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -126,15 +108,6 @@ class CurriculumScheduler:
 
 
 class GRPORolloutEngine:
-    """
-    Generates rollouts by running an LLM agent through scenarios.
-
-    This is the core loop that:
-    1. Presents a scenario to the LLM
-    2. Gets the LLM's action at each step
-    3. Feeds the action to the environment
-    4. Collects the trajectory
-    """
 
     def __init__(self, config: GRPOConfig) -> None:
         self._config = config
@@ -150,17 +123,6 @@ class GRPORolloutEngine:
         num_rollouts: int,
         llm_fn: Any,  # Callable that takes (observation, feedback, history) -> action_dict
     ) -> List[RolloutResult]:
-        """Generate G rollouts for a single scenario.
-
-        Args:
-            scenario_seed: Seed for scenario generation
-            difficulty: Difficulty level
-            num_rollouts: Number of rollouts to generate (G)
-            llm_fn: Function that returns action dict given observation
-
-        Returns:
-            List of RolloutResult sorted by reward (best first)
-        """
         results: List[RolloutResult] = []
 
         for rollout_idx in range(num_rollouts):
@@ -258,15 +220,6 @@ class GRPORolloutEngine:
 
 
 class GRPOTrainer:
-    """
-    Full GRPO training pipeline.
-
-    1. Generate scenarios with curriculum scheduling
-    2. Run G rollouts per scenario
-    3. Rank rollouts by reward
-    4. Create preference pairs (best vs worst)
-    5. Train model to prefer high-reward trajectories
-    """
 
     def __init__(self, config: GRPOConfig) -> None:
         self._config = config
@@ -283,23 +236,11 @@ class GRPOTrainer:
         llm_fn: Any,
         num_scenarios: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """Run the full data collection phase (rollouts without weight updates).
-
-        This generates the preference dataset that can be used for
-        offline GRPO/DPO training.
-
-        Args:
-            llm_fn: Function(observation, feedback, history) -> action_dict
-            num_scenarios: Override number of scenarios
-
-        Returns:
-            Collection statistics
-        """
         n_scenarios = num_scenarios or self._config.num_scenarios
         all_results: List[List[RolloutResult]] = []
 
-        print(f"Starting GRPO data collection: {n_scenarios} scenarios x {self._config.rollouts_per_scenario} rollouts")
-        print(f"Initial difficulty: {self._curriculum.current_difficulty}")
+        log.info("Starting GRPO data collection: %d scenarios x %d rollouts", n_scenarios, self._config.rollouts_per_scenario)
+        log.info("Initial difficulty: %s", self._curriculum.current_difficulty)
 
         for i in range(n_scenarios):
             seed = self._config.base_seed + i
@@ -322,18 +263,17 @@ class GRPOTrainer:
             # Log progress
             if (i + 1) % self._config.log_interval == 0:
                 status = self._curriculum.get_status()
-                print(
-                    f"[{i + 1}/{n_scenarios}] "
-                    f"difficulty={status['current_difficulty']} "
-                    f"avg_score={status['window_avg_score']:.3f} "
-                    f"best_this={best_score:.3f}"
+                log.info(
+                    "[%d/%d] difficulty=%s avg_score=%.3f best_this=%.3f",
+                    i + 1, n_scenarios, status['current_difficulty'],
+                    status['window_avg_score'], best_score,
                 )
 
             # Curriculum advancement
             if self._curriculum.should_advance():
                 old = self._curriculum.current_difficulty
                 new = self._curriculum.advance()
-                print(f"  >>> Curriculum advanced: {old} -> {new}")
+                log.info("Curriculum advanced: %s -> %s", old, new)
 
             self._log.append({
                 "scenario_idx": i,
@@ -374,12 +314,8 @@ class GRPOTrainer:
         with open(self._output_dir / "collection_stats.json", "w") as f:
             json.dump(stats, f, indent=2)
 
-        print(f"\nCollection complete!")
-        print(f"  Trajectories: {stats['count']}")
-        print(f"  SFT examples: {sft_count}")
-        print(f"  DPO pairs: {dpo_count}")
-        print(f"  GRPO groups: {grpo_count}")
-        print(f"  Output: {self._output_dir}")
+        log.info("Collection complete! Trajectories=%d SFT=%d DPO=%d GRPO=%d output=%s",
+                 stats['count'], sft_count, dpo_count, grpo_count, self._output_dir)
 
         return stats
 
@@ -388,12 +324,6 @@ class GRPOTrainer:
         all_results: List[List[RolloutResult]],
         output_path: str,
     ) -> int:
-        """Export GRPO-style grouped rollouts.
-
-        Each group contains G rollouts for the same scenario,
-        sorted by reward. The model learns to assign higher
-        probability to the best rollout in each group.
-        """
         count = 0
         with open(output_path, "w") as f:
             for group in all_results:
@@ -425,11 +355,6 @@ def create_openai_llm_fn(
     model_name: str,
     temperature: float = 0.7,
 ) -> Any:
-    """Create an LLM function using OpenAI client.
-
-    Returns a callable(observation, feedback, history) -> action_dict
-    with temperature-based diversity for generating varied rollouts.
-    """
     from openai import OpenAI
 
     client = OpenAI(base_url=base_url, api_key=api_key)
@@ -465,7 +390,7 @@ def create_openai_llm_fn(
             if match:
                 return json.loads(match.group(0))
         except Exception as e:
-            print(f"[LLM Error] {e}")
+            log.error("LLM request failed: %s", e)
 
         return {"action_type": "view_alerts"}
 
@@ -535,4 +460,4 @@ if __name__ == "__main__":
         )
 
     stats = trainer.run_data_collection(llm_fn=llm_fn)
-    print(f"\nFinal stats: {json.dumps(stats, indent=2)}")
+    log.info("Final stats: %s", json.dumps(stats, indent=2))

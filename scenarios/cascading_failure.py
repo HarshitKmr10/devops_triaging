@@ -1,15 +1,3 @@
-"""
-Task 3: Cascading Failure (Hard)
-
-The agent must trace a multi-service cascading failure backwards to its source:
-auth-service config deployment -> api-gateway 401s -> user-service auth failures
--> order-service failures -> payment-service transaction failures
-
-Scenario: A config deployment to auth-service changed the JWT key_id format
-from 'rsa-prod-2024' (hyphenated) to 'rsa_prod_2024' (underscore), causing
-95% of valid tokens to be rejected.
-"""
-
 from typing import Optional
 
 from data.service_topology import (
@@ -44,7 +32,6 @@ _ALL_SERVICES = (
 
 
 class CascadingFailureScenario(BaseScenario):
-    """Hard scenario: trace a cascading failure back to its root cause."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -71,7 +58,7 @@ class CascadingFailureScenario(BaseScenario):
             noise_services=("notification-service",),
         )
 
-    def handle_action(
+    def _handle_action_impl(
         self,
         action_type: str,
         service_name: Optional[str] = None,
@@ -87,15 +74,6 @@ class CascadingFailureScenario(BaseScenario):
         reward = 0.0
         output = ""
         feedback = ""
-
-        # Danger zone check
-        danger = self._check_danger_zone(action_type, command=command, remediation=remediation)
-        if danger:
-            feedback = f"DANGER: {danger}. Safety score reduced."
-            reward = -0.05
-            reward = self._clamp_reward(reward)
-            self._record_step(action_type, reward, service_name)
-            return ActionResult(output="", reward=reward, feedback=feedback)
 
         if action_type == "view_alerts":
             output = format_alerts(CASCADE_ALERTS)

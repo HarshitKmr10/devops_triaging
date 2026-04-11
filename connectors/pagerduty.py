@@ -1,13 +1,4 @@
-"""
-PagerDuty connector for live alert ingestion.
-
-Fetches real incidents and alerts from PagerDuty API and converts
-them to our Alert data model for use in live incident scenarios.
-
-Requires: PAGERDUTY_API_KEY environment variable
-Docs: https://developer.pagerduty.com/api-reference/
-"""
-
+import logging
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
@@ -16,6 +7,7 @@ import requests
 
 from data.service_topology import Alert
 
+log = logging.getLogger(__name__)
 
 _SEVERITY_MAP = {
     "critical": "CRITICAL",
@@ -70,7 +62,7 @@ class PagerDutyConnector:
         try:
             data = self._request("/incidents", params)
         except Exception as e:
-            print(f"[PagerDuty] Error fetching incidents: {e}")
+            log.error("Error fetching incidents: %s", e)
             return []
 
         alerts: List[Alert] = []
@@ -112,7 +104,7 @@ class PagerDutyConnector:
             )
             return resp.status_code == 200
         except Exception as e:
-            print(f"[PagerDuty] Error acknowledging {alert_id}: {e}")
+            log.error("Error acknowledging %s: %s", alert_id, e)
             return False
 
     def fetch_incident_timeline(self, incident_id: str) -> List[Dict]:
@@ -124,5 +116,5 @@ class PagerDutyConnector:
             })
             return data.get("log_entries", [])
         except Exception as e:
-            print(f"[PagerDuty] Error fetching timeline: {e}")
+            log.error("Error fetching timeline: %s", e)
             return []

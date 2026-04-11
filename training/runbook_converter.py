@@ -1,15 +1,3 @@
-"""
-Runbook-to-Scenario converter.
-
-Takes a markdown runbook as input and generates a BaseScenario
-with appropriate alerts, logs, metrics, and grading criteria.
-
-Can work with:
-- Plain text/markdown runbooks
-- LLM-assisted parsing for complex runbooks
-- Template-based generation for structured runbooks
-"""
-
 import json
 import re
 from dataclasses import dataclass, field
@@ -221,7 +209,6 @@ def _extract_keywords(text: str) -> List[str]:
 
 
 class RunbookScenario(BaseScenario):
-    """A scenario generated from a parsed runbook."""
 
     def __init__(self, runbook: ParsedRunbook) -> None:
         super().__init__()
@@ -302,7 +289,7 @@ class RunbookScenario(BaseScenario):
             }
         return metrics
 
-    def handle_action(
+    def _handle_action_impl(
         self,
         action_type: str,
         service_name: Optional[str] = None,
@@ -319,13 +306,6 @@ class RunbookScenario(BaseScenario):
         output = ""
         feedback = ""
         rb = self._runbook
-
-        # Danger zone
-        danger = self._check_danger_zone(action_type, command=command, remediation=remediation)
-        if danger:
-            reward = self._clamp_reward(-0.05)
-            self._record_step(action_type, reward, service_name)
-            return ActionResult(output="", reward=reward, feedback=f"DANGER: {danger}", done=False)
 
         # Check if this action matches a runbook step
         key = f"{action_type}_{service_name or 'any'}"

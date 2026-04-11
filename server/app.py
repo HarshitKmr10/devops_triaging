@@ -1,20 +1,3 @@
-"""
-FastAPI application for the DevOps Incident Response Environment.
-
-Exposes the IncidentResponseEnvironment over HTTP and WebSocket
-endpoints, compatible with OpenEnv EnvClient.
-
-Endpoints:
-    - POST /reset: Reset the environment
-    - POST /step: Execute an action
-    - GET /state: Get current environment state
-    - GET /health: Health check
-    - WS /ws: WebSocket endpoint for persistent sessions
-
-Usage:
-    uvicorn server.app:app --host 0.0.0.0 --port 8000
-"""
-
 try:
     from openenv.core.env_server.http_server import create_app
 except Exception as e:
@@ -40,7 +23,6 @@ app = create_app(
 
 
 def main() -> None:
-    """Entry point for direct execution."""
     import argparse
 
     import uvicorn

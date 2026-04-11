@@ -1,10 +1,3 @@
-"""
-Mock connector for testing without external dependencies.
-
-Implements all protocols using the static data from service_topology.
-This is the default connector used in evaluation/benchmark mode.
-"""
-
 from typing import Dict, List, Optional
 
 from data.service_topology import (
@@ -19,11 +12,6 @@ from data.service_topology import (
 
 
 class MockConnector:
-    """Mock connector that returns static scenario data.
-
-    Implements AlertSource, LogSource, MetricSource, and ServiceRegistry
-    protocols using the hardcoded data from service_topology.
-    """
 
     def __init__(
         self,

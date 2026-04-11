@@ -1,10 +1,3 @@
-"""
-DevOps Incident Response Environment implementation.
-
-Core environment class that manages episode lifecycle, routes actions
-to the active scenario, and returns observations with rewards.
-"""
-
 from typing import Any, List, Optional
 
 from openenv.core.env_server import Environment
@@ -41,16 +34,6 @@ class IncidentResponseEnvironment(
         episode_id: Optional[str] = None,
         **kwargs: Any,
     ) -> IncidentObservation:
-        """Reset environment to the start of a task.
-
-        Args:
-            seed: Random seed (unused - scenarios are deterministic)
-            episode_id: Optional episode identifier
-            **kwargs: Must include task_id (or task) to select scenario
-
-        Returns:
-            Initial observation with incident summary and task description
-        """
         self._task_id = kwargs.get("task_id") or kwargs.get("task") or DEFAULT_TASK
 
         if self._task_id not in SCENARIOS:
@@ -90,14 +73,6 @@ class IncidentResponseEnvironment(
         )
 
     def step(self, action: IncidentAction) -> IncidentObservation:
-        """Execute an agent action and return observation with reward.
-
-        Args:
-            action: The agent's action to execute
-
-        Returns:
-            Observation with action output, feedback, and reward
-        """
         if self._scenario is None:
             raise RuntimeError("Call reset() before step()")
         if self._done:

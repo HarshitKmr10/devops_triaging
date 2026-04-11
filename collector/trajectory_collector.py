@@ -1,11 +1,3 @@
-"""
-Trajectory collector for building SFT/DPO training datasets.
-
-Records agent-environment interactions as structured trajectories.
-Supports exporting to HuggingFace Dataset format, JSON Lines, and
-paired preference data for DPO training.
-"""
-
 import json
 import os
 import time
@@ -111,25 +103,6 @@ class Trajectory:
 
 
 class TrajectoryCollector:
-    """
-    Collects and stores agent trajectories for ML training.
-
-    Usage:
-        collector = TrajectoryCollector(output_dir="trajectories/")
-
-        # Start recording
-        traj = collector.start_trajectory(task_id="alert_triage", model="qwen-3.5")
-
-        # Record each step
-        collector.record_step(traj, observation, feedback, action_dict, reward, done)
-
-        # Finish and save
-        collector.finish_trajectory(traj, total_reward=0.85, success=True)
-
-        # Export for training
-        collector.export_sft_dataset("sft_data.jsonl", min_quality="good")
-        collector.export_dpo_pairs("dpo_pairs.jsonl")
-    """
 
     def __init__(self, output_dir: str = "trajectories") -> None:
         self._output_dir = Path(output_dir)
@@ -213,15 +186,6 @@ class TrajectoryCollector:
         output_path: str,
         min_quality: str = "good",
     ) -> int:
-        """Export trajectories as SFT training data in JSONL format.
-
-        Args:
-            output_path: Path to output JSONL file
-            min_quality: Minimum quality tier to include (expert/good/mediocre/poor)
-
-        Returns:
-            Number of trajectories exported
-        """
         quality_order = {"expert": 3, "good": 2, "mediocre": 1, "poor": 0}
         min_level = quality_order.get(min_quality, 2)
 
@@ -247,18 +211,6 @@ class TrajectoryCollector:
         output_path: str,
         reward_gap: float = 0.2,
     ) -> int:
-        """Export trajectory pairs for DPO training.
-
-        Pairs a high-reward trajectory with a low-reward trajectory
-        for the same task, creating preference data.
-
-        Args:
-            output_path: Path to output JSONL file
-            reward_gap: Minimum reward difference to form a pair
-
-        Returns:
-            Number of pairs exported
-        """
         # Group by task
         by_task: Dict[str, List[Trajectory]] = {}
         for traj in self._trajectories:

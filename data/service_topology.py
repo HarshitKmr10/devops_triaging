@@ -1,10 +1,3 @@
-"""
-Service topology and mock data generators for incident scenarios.
-
-Defines the microservice architecture, alert templates, log generators,
-and metric simulators used across all incident response scenarios.
-"""
-
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
@@ -24,8 +17,6 @@ class ServiceDefinition:
     normal_cpu_pct: float = 25.0
     normal_memory_pct: float = 40.0
 
-
-# ─── Service Definitions ────────────────────────────────────────────────
 
 SERVICES: Dict[str, ServiceDefinition] = {
     "auth-service": ServiceDefinition(
@@ -162,8 +153,6 @@ class MetricSnapshot:
     trend: str = "stable"  # rising, falling, stable, spike
 
 
-# ─── Alert Triage Scenario Data ─────────────────────────────────────────
-
 ALERT_TRIAGE_ALERTS: tuple[Alert, ...] = (
     Alert(
         alert_id="ALT-001",
@@ -280,7 +269,6 @@ ALERT_TRIAGE_METRICS: Dict[str, Dict[str, MetricSnapshot]] = {
 }
 
 
-# ─── Root Cause Analysis Scenario Data ───────────────────────────────────
 
 RCA_ALERTS: tuple[Alert, ...] = (
     Alert(
@@ -361,7 +349,6 @@ RCA_METRICS: Dict[str, Dict[str, MetricSnapshot]] = {
 }
 
 
-# ─── Cascading Failure Scenario Data ─────────────────────────────────────
 
 CASCADE_ALERTS: tuple[Alert, ...] = (
     Alert(
@@ -480,7 +467,6 @@ CASCADE_METRICS: Dict[str, Dict[str, MetricSnapshot]] = {
 
 
 def format_alerts(alerts: tuple[Alert, ...]) -> str:
-    """Format alerts into a human-readable monitoring dashboard view."""
     lines = ["=" * 70, "  INCIDENT MONITORING DASHBOARD - ACTIVE ALERTS", "=" * 70, ""]
     for alert in alerts:
         icon = {"CRITICAL": "[!!!]", "WARNING": "[!!]", "INFO": "[i]"}.get(alert.severity, "[?]")
@@ -493,7 +479,6 @@ def format_alerts(alerts: tuple[Alert, ...]) -> str:
 
 
 def format_logs(logs: tuple[LogEntry, ...]) -> str:
-    """Format log entries into a structured log view."""
     lines = ["-" * 60]
     for entry in logs:
         trace = f" [trace:{entry.trace_id}]" if entry.trace_id else ""
@@ -503,7 +488,6 @@ def format_logs(logs: tuple[LogEntry, ...]) -> str:
 
 
 def format_metric(snapshot: MetricSnapshot) -> str:
-    """Format a metric snapshot into a readable string."""
     delta = snapshot.current_value - snapshot.normal_value
     delta_pct = (delta / snapshot.normal_value * 100) if snapshot.normal_value > 0 else 0
     trend_icon = {"rising": "^", "falling": "v", "spike": "!!!", "stable": "-"}.get(snapshot.trend, "?")
@@ -515,7 +499,6 @@ def format_metric(snapshot: MetricSnapshot) -> str:
 
 
 def format_metrics(metrics: Dict[str, MetricSnapshot]) -> str:
-    """Format all metrics for a service."""
     lines = []
     for metric in metrics.values():
         lines.append(format_metric(metric))
@@ -523,7 +506,6 @@ def format_metrics(metrics: Dict[str, MetricSnapshot]) -> str:
 
 
 def format_service_info(service: ServiceDefinition) -> str:
-    """Format service details for inspection."""
     deps = ", ".join(service.dependencies) if service.dependencies else "none"
     return (
         f"Service: {service.name}\n"
@@ -540,7 +522,6 @@ def format_service_info(service: ServiceDefinition) -> str:
 
 
 def format_dependency_map(service_names: tuple[str, ...]) -> str:
-    """Format a dependency map for the given services."""
     lines = ["=" * 50, "  SERVICE DEPENDENCY MAP", "=" * 50, ""]
     for name in service_names:
         svc = SERVICES.get(name)

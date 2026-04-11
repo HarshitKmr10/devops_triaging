@@ -1,10 +1,3 @@
-"""
-Procedural scenario generator.
-
-Generates infinite novel incident scenarios from composable failure types,
-service topologies, and cascade patterns. Seed-based for reproducibility.
-"""
-
 import random
 from typing import Dict, List, Optional, Tuple
 
@@ -53,7 +46,6 @@ _CANDIDATE_PRIMARY_SERVICES = tuple(
 
 
 class GeneratedScenario(BaseScenario):
-    """A procedurally generated incident scenario."""
 
     def __init__(
         self,
@@ -109,7 +101,7 @@ class GeneratedScenario(BaseScenario):
     def ground_truth(self) -> GroundTruth:
         return self._ground_truth
 
-    def handle_action(
+    def _handle_action_impl(
         self,
         action_type: str,
         service_name: Optional[str] = None,
@@ -125,15 +117,6 @@ class GeneratedScenario(BaseScenario):
         reward = 0.0
         output = ""
         feedback = ""
-
-        # Danger zone
-        danger = self._check_danger_zone(action_type, command=command, remediation=remediation)
-        if danger:
-            feedback = f"DANGER: {danger}. Safety score reduced."
-            reward = -0.05
-            reward = self._clamp_reward(reward)
-            self._record_step(action_type, reward, service_name)
-            return ActionResult(output="", reward=reward, feedback=feedback)
 
         gt = self._ground_truth
 
