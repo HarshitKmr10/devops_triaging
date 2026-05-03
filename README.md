@@ -1,14 +1,3 @@
----
-title: ITSM Intelligence Environment
-emoji: "🔧"
-colorFrom: red
-colorTo: blue
-sdk: docker
-app_port: 8000
-pinned: false
-tags:
-  - openenv
----
 
 # ITSM Intelligence Environment - IT Service Management for LLM Agents
 
